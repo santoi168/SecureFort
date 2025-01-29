@@ -127,9 +127,18 @@ wlan_country_choice=$(prompt_and_validate "Enter your choice from the above list
 run_command sudo raspi-config nonint do_wifi_country "$wlan_country_choice"
 echo "WLAN Country set to $wlan_country_choice."
 
-# Step 2: Display locales for the selected WLAN country
+# Step 2: Prompt for WLAN Country again for locale selection
 echo "Setting system locale..."
-if ! display_locales_for_wlan_country "$wlan_country_choice"; then
+echo "-------------------------------------"
+echo "Available WLAN Countries:"
+cat /usr/share/zoneinfo/iso3166.tab | awk '{print $1}' | grep -E '^[A-Z]{2}$' | less --quit-if-one-screen --no-init --chop-long-lines
+echo "-------------------------------------"
+
+# Prompt user for WLAN country selection again
+locale_country_choice=$(prompt_and_validate "Enter your choice from the above list for locale selection: " validate_wlan_country "Invalid WLAN country code.") || locale_country_choice="$wlan_country_choice"
+
+# Display locales for the selected WLAN country
+if ! display_locales_for_wlan_country "$locale_country_choice"; then
     locale_choice="$DEFAULT_LOCALE"
 else
     # Step 3: Prompt user for locale selection
@@ -143,11 +152,14 @@ else
     done
 fi
 
+# Extract the first part of the locale (before the space)
+locale_value=$(echo "$locale_choice" | awk '{print $1}')
+
 # Generate and set the locale
-echo "Generating and setting locale: $locale_choice..."
+echo "Generating and setting locale: $locale_value..."
 run_command sudo locale-gen "$locale_choice"
-run_command sudo update-locale LANG="$locale_choice"
-echo "Locale set to $locale_choice."
+run_command sudo update-locale LANG="$locale_value" LC_MESSAGES="$locale_value"
+echo "Locale set to $locale_value."
 
 # Step 4: Prompt for Timezone
 echo "Setting TimeZone..."
@@ -200,13 +212,6 @@ packages=(
     dhcpcd
     iptables
     resolvconf
-    python3-flask
-    python3-flask-socketio
-    python3-flask-cors
-    python3-requests
-    python3-qrcode
-    python3-watchdog
-    python3-psutil
     python3-gunicorn
     python3-gevent
     nginx
@@ -311,7 +316,7 @@ fi
 echo "-------------------------------------"
 echo "Summary of Changes:"
 echo "1. WLAN Country set to: $wlan_country_choice"
-echo "2. Locale set to: $locale_choice"
+echo "2. Locale set to: $locale_value"
 echo "3. Timezone set to: $timezone_choice"
 echo "4. Packages installed: ${packages[*]}"
 echo "5. SECRET_KEY updated in $SERVICE_FILE"
