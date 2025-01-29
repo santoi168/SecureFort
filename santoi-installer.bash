@@ -123,7 +123,7 @@ cat /usr/share/zoneinfo/iso3166.tab | awk '{print $1}' | grep -E '^[A-Z]{2}$' | 
 echo "-------------------------------------"
 
 # Prompt user for WLAN country selection
-wlan_country_choice=$(prompt_and_validate "Enter your choice from the above list: " validate_wlan_country "Invalid WLAN country code.") || wlan_country_choice="$DEFAULT_WLAN_COUNTRY"
+wlan_country_choice=$(prompt_and_validate "Enter your WLAN Country choice from the above list: " validate_wlan_country "Invalid WLAN country code.") || wlan_country_choice="$DEFAULT_WLAN_COUNTRY"
 run_command sudo raspi-config nonint do_wifi_country "$wlan_country_choice"
 echo "WLAN Country set to $wlan_country_choice."
 
@@ -135,7 +135,7 @@ cat /usr/share/zoneinfo/iso3166.tab | awk '{print $1}' | grep -E '^[A-Z]{2}$' | 
 echo "-------------------------------------"
 
 # Prompt user for WLAN country selection again
-locale_country_choice=$(prompt_and_validate "Enter your choice from the above list for locale selection: " validate_wlan_country "Invalid WLAN country code.") || locale_country_choice="$wlan_country_choice"
+locale_country_choice=$(prompt_and_validate "Enter your Locale choice from the above list: " validate_wlan_country "Invalid WLAN country code.") || locale_country_choice="$wlan_country_choice"
 
 # Display locales for the selected WLAN country
 if ! display_locales_for_wlan_country "$locale_country_choice"; then
@@ -152,12 +152,13 @@ else
     done
 fi
 
+run_command sudo sed -i "/^# \($locale_choice\)$/s/^#//" /etc/locale.gen
 # Extract the first part of the locale (before the space)
 locale_value=$(echo "$locale_choice" | awk '{print $1}')
 
 # Generate and set the locale
 echo "Generating and setting locale: $locale_value..."
-run_command sudo locale-gen "$locale_choice"
+run_command sudo locale-gen "$locale_value"
 run_command sudo update-locale LANG="$locale_value" LC_MESSAGES="$locale_value"
 echo "Locale set to $locale_value."
 
