@@ -152,7 +152,7 @@ else
     done
 fi
 
-run_command sudo sed -i "/^# \($locale_choice\)$/s/^#//" /etc/locale.gen
+run_command sudo sed -i "/^# \($locale_choice\)$/s/^# //" /etc/locale.gen
 # Extract the first part of the locale (before the space)
 locale_value=$(echo "$locale_choice" | awk '{print $1}')
 
