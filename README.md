@@ -26,5 +26,5 @@ ssh via admin account and use journalctl command to monitor the debug loggings o
 - santoi-go
 - santoi-nginx
 
-Contact: santoi168@gmail.com
+Feel free to drop your feedback/input in to this project discussions.
 
