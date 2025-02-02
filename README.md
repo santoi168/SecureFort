@@ -15,7 +15,7 @@ For details on:
 
 Refer to the [SecureFort User Guide](#).  
 
-## VPN Configuration**  
+## VPN Configuration
 
 Refer to the [SecureFort User Guide](#).  
 
