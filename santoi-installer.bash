@@ -110,6 +110,33 @@ prompt_and_validate() {
     fi
 }
 
+# Step 0: Update package list
+echo "Updating package list..."
+run_command sudo apt update || { echo "Failed to update package list. Exiting."; exit 1; }
+
+# List of packages to install
+packages=(
+    openvpn
+    wireguard
+    hostapd
+    dnsmasq
+    dnsutils
+    dhcpcd
+    iptables
+    resolvconf
+    python3-gunicorn
+    python3-gevent
+    nginx
+)
+
+# Install packages
+echo "Updating package repositories..."
+run_command sudo apt update || { echo "Failed to update repositories."; exit 1; }
+run_command sudo apt -y -o Dpkg::Options::="--force-confnew" full-upgrade || { echo "Failed to complete full upgrade."; exit 1; }
+echo "Installing packages..."
+run_command sudo apt install -y "${packages[@]}" || { echo "Failed to install packages. Exiting."; exit 1; }
+echo "All packages installed successfully."
+
 # Default settings
 DEFAULT_LOCALE="en_US.UTF-8 UTF-8"
 DEFAULT_TIMEZONE="UTC"
@@ -196,35 +223,7 @@ run_command sudo sed -i '/^\[all\]/a usb_max_current_enable=1' /boot/firmware/co
 # Verify the addition
 echo "Verifying /boot/firmware/config.txt changes..."
 grep -A 1 "^\[all\]" /boot/firmware/config.txt
-
 echo "Basic system configuration complete!"
-
-# Update package list
-echo "Updating package list..."
-run_command sudo apt update || { echo "Failed to update package list. Exiting."; exit 1; }
-
-# List of packages to install
-packages=(
-    openvpn
-    wireguard
-    hostapd
-    dnsmasq
-    dnsutils
-    dhcpcd
-    iptables
-    resolvconf
-    python3-gunicorn
-    python3-gevent
-    nginx
-)
-
-# Install packages
-echo "Updating package repositories..."
-run_command sudo apt update || { echo "Failed to update repositories."; exit 1; }
-run_command sudo apt -y full-upgrade || { echo "Failed to complete full upgrade."; exit 1; }
-echo "Installing packages..."
-run_command sudo apt install -y "${packages[@]}" || { echo "Failed to install packages. Exiting."; exit 1; }
-echo "All packages installed successfully."
 
 # Manage NetworkManager and systemd-networkd
 echo "Configuring network services..."
@@ -287,6 +286,34 @@ else
     echo "Warning: /etc/hostapd/hostapd.conf not found. Skipping update."
 fi
 
+# Prompt user for AdBlock installation
+read -p "Would you like to install AdBlock? (y/n): " install_adblock
+if [[ "$install_adblock" =~ ^[Yy]$ ]]; then
+    echo "Installing AdBlock..."
+
+    # Create dnsmasq adblock configuration
+    run_command sudo bash -c 'echo "addn-hosts=/etc/adblock.list" > /etc/dnsmasq.d/adblock.conf'
+    echo "Created /etc/dnsmasq.d/adblock.conf."
+
+    # Create an empty adblock list file
+    run_command sudo touch /etc/adblock.list
+    echo "Created empty /etc/adblock.list."
+
+    run_command sudo /etc/santoi/utils/update-dnsmasq-blocklist.sh
+    echo "Updating Ad Block list."
+    
+    # Add crontab entries for root
+    run_command sudo bash -c 'echo "0 0 * * * /etc/santoi/utils/update-dnsmasq-blocklist.sh" >> /tmp/root_cron'
+    run_command sudo bash -c 'echo "55 11 * * * /etc/santoi/utils/cleanjournal.sh" >> /tmp/root_cron'
+    run_command sudo crontab -u root /tmp/root_cron
+    run_command sudo rm /tmp/root_cron
+    echo "Crontab entries added for AdBlock updates and log cleaning."
+
+    # Restart dnsmasq to apply changes
+    run_command sudo systemctl restart dnsmasq
+    echo "Dnsmasq restarted to apply AdBlock settings."
+fi
+
 # Reload systemd and enable services
 run_command sudo systemctl daemon-reload
 run_command sudo systemctl unmask hostapd
@@ -322,4 +349,5 @@ echo "3. Timezone set to: $timezone_choice"
 echo "4. Packages installed: ${packages[*]}"
 echo "5. SECRET_KEY updated in $SERVICE_FILE"
 echo "6. Updated country_code in /etc/hostapd.conf"
+echo "7. AD Block service in /etc/dnsmasq.d/adblock.conf"
 echo "-------------------------------------"
