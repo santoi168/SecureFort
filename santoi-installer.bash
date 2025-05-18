@@ -305,7 +305,7 @@ if [[ "$install_adblock" =~ ^[Yy]$ ]]; then
     # Add crontab entries for root
     run_command sudo bash -c 'echo "0 0 * * * /etc/santoi/utils/update-dnsmasq-blocklist.sh" >> /tmp/root_cron'
     run_command sudo bash -c 'echo "55 11 * * * /etc/santoi/utils/cleanjournal.sh" >> /tmp/root_cron'
-    run_command sudo bash -c 'echo "00 06 * * * apt update;apt -y -o Dpkg::Options::="--force-confold" full-upgrade;apt -y autoremove --purge && apt autoclean && apt clean" >> /tmp/root_cron'
+    run_command sudo bash -c 'echo "00 06 * * * root apt update && apt -y -o Dpkg::Options::=\"--force-confold\" full-upgrade && apt -y autoremove --purge && apt autoclean && apt clean" >> /tmp/root_cron'
     run_command sudo crontab -u root /tmp/root_cron
     run_command sudo rm /tmp/root_cron
     echo "Crontab entries added for AdBlock updates and log cleaning."
