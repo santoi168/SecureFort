@@ -84,9 +84,9 @@ validate_timezone() {
     return 0
 }
 
-# Function to validate WLAN country code
+# Function to validate WLAN country code (fixed with stricter match)
 validate_wlan_country() {
-    if ! grep -q "^$1" /usr/share/zoneinfo/iso3166.tab; then
+    if ! grep -q "^$1[[:space:]]" /usr/share/zoneinfo/iso3166.tab; then
         echo "Error: Invalid WLAN country code '$1'. Please choose from the list above."
         return 1
     fi
@@ -331,6 +331,16 @@ echo "-------------------------------------"
 echo "System Reboot"
 echo "After reboot, please reconnect to WLAN SSID, SANTOI RP4. Default password is santoi!@#"
 echo "To continue setup your router and vpn service, follow the user guide and go to http://192.168.3.1"
+
+# Run logging optimizer script
+echo "-------------------------------------"
+echo "Applying logging optimization (reduce SD writes)..."
+if [ -f "/etc/santoi/utils/logging_optimizer.sh" ]; then
+    run_command bash /etc/santoi/utils/logging_optimizer.sh
+else
+    echo "Warning: logging_optimizer.sh not found. Skipping logging optimization."
+fi
+
 echo "-------------------------------------"
 read -p "Do you want to reboot the system now? (yes/no): " reboot_choice
 
@@ -352,3 +362,4 @@ echo "5. SECRET_KEY updated in $SERVICE_FILE"
 echo "6. Updated country_code in /etc/hostapd.conf"
 echo "7. AD Block service in /etc/dnsmasq.d/adblock.conf"
 echo "-------------------------------------"
+
